@@ -113,6 +113,11 @@ private:
     double MnDiff;
     bool Verbose;
     PNotify Notify;
+    //parameters for LibSVM
+    double Gamma;
+    TStr Ker;
+    TStr Type;
+    int Degree;
 
     // model
     TSvm::TLinModel Model;

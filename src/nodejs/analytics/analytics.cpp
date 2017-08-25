@@ -141,6 +141,10 @@ TNodeJsSvmModel::TNodeJsSvmModel(const PJsonVal& ParamVal):
         MxTime(1000*1),
         MnDiff(1e-6),
         Verbose(false),
+        Gamma(1.0),
+        Ker("LINEAR"),
+        Type("C_SVC"),
+        Degree(0),
         Notify(TNotify::NullNotify) {
 
     UpdateParams(ParamVal);
@@ -157,6 +161,10 @@ TNodeJsSvmModel::TNodeJsSvmModel(TSIn& SIn):
         MnDiff(TFlt(SIn)),
         Verbose(TBool(SIn)),
         Notify(TNotify::NullNotify),
+        Gamma(TFlt(SIn)),
+        Ker(SIn),
+        Type(SIn),
+        Degree(TInt(SIn)),
         Model(SIn) {
 
     if (Verbose) { Notify = TNotify::StdNotify; }
@@ -355,6 +363,10 @@ void TNodeJsSvmModel::UpdateParams(const PJsonVal& ParamVal) {
         Verbose = ParamVal->GetObjBool("verbose");
         Notify = Verbose ? TNotify::StdNotify : TNotify::NullNotify;
     }
+    if (ParamVal->IsObjKey("gamma")) Gamma = ParamVal->GetObjNum("gamma");
+    if (ParamVal->IsObjKey("kernel")) Ker = ParamVal->GetObjStr("kernel");
+    if (ParamVal->IsObjKey("type")) Type = ParamVal->GetObjStr("type");
+    if (ParamVal->IsObjKey("degree")) Degree = ParamVal->GetObjInt("degree");
 }
 
 PJsonVal TNodeJsSvmModel::GetParams() const {
@@ -369,6 +381,10 @@ PJsonVal TNodeJsSvmModel::GetParams() const {
     ParamVal->AddToObj("maxTime", MxTime / 1000); // convert from miliseconds to seconds
     ParamVal->AddToObj("minDiff", MnDiff);
     ParamVal->AddToObj("verbose", Verbose);
+    ParamVal->AddToObj("gamma", Gamma);
+    ParamVal->AddToObj("kernel", Ker);
+    ParamVal->AddToObj("type", Type);
+    ParamVal->AddToObj("degree", Degree);
 
     return ParamVal;
 }
@@ -383,6 +399,10 @@ void TNodeJsSvmModel::Save(TSOut& SOut) const {
     TInt(MxTime).Save(SOut);
     TFlt(MnDiff).Save(SOut);
     TBool(Verbose).Save(SOut);
+    TFlt(Gamma).Save(SOut);
+    Ker.Save(SOut);
+    Type.Save(SOut);
+    TInt(Degree).Save(SOut);
     Model.Save(SOut);
 }
 
@@ -443,8 +463,10 @@ void TNodeJsSVC::fit(const v8::FunctionCallbackInfo<v8::Value>& Args) {
                 JsModel->Model = TSvm::TLinModel(SvmModel->GetWgtV(), SvmModel->GetThresh());
             }
             else if (JsModel->Algorithm == "LIBSVM") {
-                JsModel->Model = TSvm::LibSvmSolveClassify(VecV, ClsV, JsModel->SvmCost,
-                    TQm::TEnv::Debug, TQm::TEnv::Error);
+                JsModel->Model = TSvm::TLinModel();
+                JsModel->Model.Solve(VecV, ClsV, JsModel->SvmCost, TQm::TEnv::Debug, TQm::TEnv::Error);
+                //JsModel->Model = TSvm::LibSvmSolveClassify(VecV, ClsV, JsModel->SvmCost,/* JsModel->Gamma,
+                    //JsModel->Ker, JsModel->Type, JsModel->Degree,*/TQm::TEnv::Debug, TQm::TEnv::Error);
             }
             else {
                 throw TExcept::New("SVC.fit: unknown algorithm " + JsModel->Algorithm);
@@ -464,8 +486,8 @@ void TNodeJsSVC::fit(const v8::FunctionCallbackInfo<v8::Value>& Args) {
                 JsModel->Model = TSvm::TLinModel(SvmModel->GetWgtV(), SvmModel->GetThresh());
             }
             else if (JsModel->Algorithm == "LIBSVM") {
-                JsModel->Model = TSvm::LibSvmSolveClassify(VecV, ClsV, JsModel->SvmCost,
-                    TQm::TEnv::Debug, TQm::TEnv::Error);
+                JsModel->Model = TSvm::TLinModel();
+                JsModel->Model.Solve(VecV, ClsV, JsModel->SvmCost, TQm::TEnv::Debug, TQm::TEnv::Error);
             }
             else {
                 throw TExcept::New("SVC.fit: unknown algorithm " + JsModel->Algorithm);

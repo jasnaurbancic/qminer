@@ -39,7 +39,7 @@
 #include "bowlinalg.h"
 
 // SVM
-#include "svm.h"
+#include "svmtest.h"
 #include "svmPrLoqo.h"
 #include "svmbasic.h"
 #include "strkernel.h"
